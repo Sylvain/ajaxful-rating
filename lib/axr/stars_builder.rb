@@ -55,21 +55,31 @@ module AjaxfulRating # :nodoc:
     end
     
     def ratings_tag
+      already_rated = rateable.rated_by?(user, options[:dimension]) if user    
       stars = []
-      width = (show_value / rateable.class.max_stars.to_f) * 100
+    	if !options[:force_static] && (user && options[:current_user] == user &&
+          (!already_rated || rateable.axr_config[:allow_update]))
+	      width = "width: #{(show_value / rateable.class.max_stars.to_f) * 100}%;"
+  	    bckg = "background-image: url('/images/ajaxful_rating/#{options[:dimension]}_#{show_value}.png')"  
+  	    width2 = rateable.class.max_stars * 25         
+      else
+	      width = "width: #{(show_value == 0) ? 0 : 25}px;"
+  	    bckg = "background-position: -#{(show_value-1).round * 25}px center" 
+  	    width2 = 25    
+      end
       li_class = "axr-#{show_value}-#{rateable.class.max_stars}".gsub('.', '_')
-      @css_builder.rule('.ajaxful-rating', :width => (rateable.class.max_stars * 25))
       @css_builder.rule('.ajaxful-rating.small',
         :width => (rateable.class.max_stars * 10)) if options[:small]
       
       stars << @template.content_tag(:li, i18n(:current), :class => "show-value",
-        :style => "width: #{width}%")
+        :style => "#{width} #{bckg}")
       stars += (1..rateable.class.max_stars).map do |i|
         star_tag(i)
       end
       # When using rails_xss plugin, it needs to render as HTML
       stars = "".respond_to?(:html_safe) ? stars.join.html_safe : stars.join
-      @template.content_tag(:ul, stars, :class => "ajaxful-rating#{' small' if options[:small]}")
+      
+      @template.content_tag(:ul, stars, :class => "ajaxful-rating#{' small' if options[:small]}", :style => "width: #{width2}px;")
     end
     
     def star_tag(value)
@@ -77,7 +87,7 @@ module AjaxfulRating # :nodoc:
       css_class = "stars-#{value}"
       @css_builder.rule(".ajaxful-rating .#{css_class}", {
         :width => "#{(value / rateable.class.max_stars.to_f) * 100}%",
-        :zIndex => (rateable.class.max_stars + 2 - value).to_s
+        :zIndex => (rateable.class.max_stars + 2 - value).to_s,
       })
       @template.content_tag(:li) do
         if !options[:force_static] && (user && options[:current_user] == user &&
@@ -107,8 +117,13 @@ module AjaxfulRating # :nodoc:
       @template.link_to_remote(value, remote_options.merge(config))
     end
     
+    def value_tag
+     user ? "" : @template.content_tag(:span, "(#{"%.1f" % (show_value== 0 ? 0 : show_value-1)}/#{rateable.class.max_stars.to_i-1})", :class => "summary")
+    end
+    
     def wrapper_tag
-      @template.content_tag(:div, ratings_tag, :class => "ajaxful-rating-wrapper",
+    	result = "".respond_to?(:html_safe) ? [ratings_tag, value_tag].join.html_safe : [ratings_tag, value_tag].join
+      @template.content_tag(:div, result, :class => "ajaxful-rating-wrapper",
         :id => rateable.wrapper_dom_id(options))
     end
   end

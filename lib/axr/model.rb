@@ -153,7 +153,7 @@ module AjaxfulRating # :nodoc:
         self.rates_sum(dimension).to_f / self.total_rates(dimension).to_f
       end
       avg.nan? ? 0.0 : avg
-    end
+    end  
 
     # Overrides the default +rates+ method and returns the propper array
     # for the dimension passed.
@@ -210,6 +210,16 @@ module AjaxfulRating # :nodoc:
     def find_rated_with(stars, dimension = nil)
       find_statement(:stars, stars, dimension)
     end
+
+    # Finds the rateable objects with the highest rate average.
+    def find_most_popular_desc(dimension = nil)
+      all.sort_by { |o| o.rate_average(true, dimension) }.reverse
+    end
+    
+    # Finds the rateable object with the highest rate average.
+    def find_avg_most_popular_desc(dimensions = nil)
+      all.sort_by { |o| dimensions.map {|dim| o.rate_average(true, dim)}.sum/dimensions.size }.reverse
+    end    
 
     # Finds the rateable object with the highest rate average.
     def find_most_popular(dimension = nil)

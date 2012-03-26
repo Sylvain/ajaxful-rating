@@ -25,8 +25,8 @@ module AjaxfulRating # :nodoc:
       key = :no_ratings if key == :user_rating && options[:show_user_rating] && ((value || show_value) == 0)
       default = DEFAULTS[key]
       key = "ajaxful_rating.helper.#{key}"
-      I18n.t(key, :value => (value || show_value),
-        :max => rateable.class.max_stars, :default => default)
+      I18n.t(key, :value => ("%.1f" % ((value || show_value)-1)),
+        :max => rateable.class.max_stars-1, :default => default)
     end
   end
 end
